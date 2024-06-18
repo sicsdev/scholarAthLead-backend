@@ -8,6 +8,7 @@ const schema = fs.readFileSync(schemaPath, 'utf8');
 db.query(schema, (err, results) => {
 
     if (err) throw err;
+    
     console.log('Schema initialized');
     db.end();
 });
