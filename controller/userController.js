@@ -17,7 +17,8 @@ exports.submitForm = (req, res) => {
         message,
         email,
         package,
-        payment_status
+        payment_status,
+        application_outcome = 'Waiting List' // Default value for application outcome
     } = req.body;
 
     // Validate required fields (except password)
@@ -59,8 +60,9 @@ exports.submitForm = (req, res) => {
                 message,
                 email,
                 package,
-                payment_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                payment_status,
+                application_outcome
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         db.query(sql, [
@@ -77,7 +79,8 @@ exports.submitForm = (req, res) => {
             message,
             email,
             package,
-            payment_status
+            payment_status,
+            application_outcome
         ], (err, result) => {
             if (err) {
                 return res.status(500).json({ error: 'Error saving form data' });
@@ -104,6 +107,7 @@ exports.submitForm = (req, res) => {
                     Email: ${email}
                     Package: ${package}
                     Payment Status: ${payment_status}
+                    Application Outcome: ${application_outcome}
                 `
             };
 

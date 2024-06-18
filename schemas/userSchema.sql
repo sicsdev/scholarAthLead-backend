@@ -1,4 +1,3 @@
--- submitFormSchema.sql
 CREATE TABLE IF NOT EXISTS userSchema (
     id INT AUTO_INCREMENT PRIMARY KEY,
     parent_name_prefix ENUM('Mr.', 'Mrs.') NOT NULL,
@@ -16,5 +15,6 @@ CREATE TABLE IF NOT EXISTS userSchema (
     password VARCHAR(255) NOT NULL,
     package VARCHAR(255) NOT NULL,
     payment_status ENUM('Paid', 'Unpaid') NOT NULL,
+    application_outcome ENUM('Yes', 'Waiting List', 'No availability') DEFAULT 'Waiting List' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
