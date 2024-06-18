@@ -11,3 +11,4 @@ db.query(schema, (err, results) => {
     console.log('Schema initialized');
     db.end();
 });
+
