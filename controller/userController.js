@@ -18,7 +18,7 @@ exports.submitForm = (req, res) => {
         email,
         package,
         payment_status,
-        application_outcome = 'Waiting List' // Default value for application outcome
+        application_outcome = '' // Default value for application outcome
     } = req.body;
 
     // Validate required fields (except password)
@@ -89,33 +89,20 @@ exports.submitForm = (req, res) => {
             // Send email to admin
             const adminMailOptions = {
                 from: process.env.EMAIL_USER,
-                to: email,
+                to: "console.log.vivek@gmail.com",
                 subject: 'New Form Submission',
                 text: `
                     A new form has been submitted with the following details:
-                    Parent Name Prefix: ${parent_name_prefix}
-                    Parent Name: ${parent_name}
-                    Student Name Prefix: ${student_name_prefix}
                     Student Name: ${student_name}
-                    Birth Date: ${birth_date}
-                    Age: ${age}
-                    School Name: ${school_name}
-                    LinkedIn Profile: ${linkedin_profile}
-                    Climbing Experience (Months): ${climbing_experience_months}
-                    Climbing Experience (Years): ${climbing_experience_years}
-                    Message: ${message}
-                    Email: ${email}
-                    Package: ${package}
-                    Payment Status: ${payment_status}
-                    Application Outcome: ${application_outcome}
                 `
             };
 
             transporter.sendMail(adminMailOptions, (error, info) => {
                 if (error) {
-                    return res.status(500).json({ error: 'Error sending email to admin' });
+                    console.error('Error sending email to admin: ', error);
+                } else {
+                    console.log('Email sent to admin: ' + info.response);
                 }
-                console.log('Email sent to admin: ' + info.response);
             });
 
             // Send email to user
@@ -128,12 +115,13 @@ exports.submitForm = (req, res) => {
 
             transporter.sendMail(userMailOptions, (error, info) => {
                 if (error) {
-                    return res.status(500).json({ error: 'Error sending email to user' });
+                    console.error('Error sending email to user: ', error);
+                } else {
+                    console.log('Email sent to user: ' + info.response);
                 }
-                console.log('Email sent to user: ' + info.response);
             });
 
-            res.status(201).json({ message: 'Form data saved successfully' });
+            return res.status(201).json({ message: 'Form data saved successfully' });
         });
     });
 };
@@ -147,3 +135,64 @@ exports.getForms = (req, res) => {
         res.json(results);
     });
 };
+
+exports.updateForm = (req, res) => {
+    const email = req.params.email;
+    const fieldsToUpdate = req.body;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const checkEmailSql = 'SELECT * FROM userSchema WHERE email = ?';
+    db.query(checkEmailSql, [email], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error checking email' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'No record found with this email' });
+        }
+
+        let updateSql = 'UPDATE userSchema SET ';
+        const updateValues = [];
+        Object.keys(fieldsToUpdate).forEach((field, index) => {
+            updateSql += `${field} = ?`;
+            if (index < Object.keys(fieldsToUpdate).length - 1) {
+                updateSql += ', ';
+            }
+            updateValues.push(fieldsToUpdate[field]);
+        });
+        updateSql += ' WHERE email = ?';
+        updateValues.push(email);
+
+        db.query(updateSql, updateValues, async (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error updating form data' });
+            }
+
+            if (fieldsToUpdate.application_outcome) {
+                const userMailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: email,
+                    subject: 'Application Outcome Update',
+                    text: `Dear ${results[0].parent_name}, your application outcome has been updated to: ${fieldsToUpdate.application_outcome}.`
+                };
+
+                transporter.sendMail(userMailOptions, (error, info) => {
+                    if (error) {
+                        return res.status(500).json({ error: 'Error sending email to user' });
+                    }
+                    console.log('Email sent to user: ' + info.response);
+                });
+
+              
+            }
+
+            res.status(200).json({ message: 'Form data updated successfully' });
+        });
+    });
+};
+
+

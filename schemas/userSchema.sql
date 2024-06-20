@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS userSchema (
     password VARCHAR(255) NOT NULL,
     package VARCHAR(255) NOT NULL,
     payment_status ENUM('Paid', 'Unpaid') NOT NULL,
-    application_outcome ENUM('Yes', 'Waiting List', 'No availability') DEFAULT 'Waiting List' NOT NULL,
+    application_outcome ENUM('Yes', 'Waiting List', 'No availability') DEFAULT '' NOT NULL,
+    docusign_view_link VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
