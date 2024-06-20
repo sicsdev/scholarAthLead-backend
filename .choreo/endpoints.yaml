@@ -1,6 +1,12 @@
 endpoints:
-  - name: my-nodejs-endpoint
-    protocol: HTTP
-    port: 3000
-    path: /
-    exposure: external
+  - name: my-nodejs-app
+    path: /api
+    http_methods:
+      - GET
+      - POST
+    scripts:
+      pre_script: npm install  # Example of a script to run before starting the server
+      start_script: npm start  # Command to start your Node.js application
+    buildpacks:
+      - type: nodejs
+        version: 18.17  
