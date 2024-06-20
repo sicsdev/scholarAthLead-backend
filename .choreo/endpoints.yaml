@@ -1,0 +1,6 @@
+endpoints:
+  - name: my-nodejs-endpoint
+    protocol: HTTP
+    port: 3000
+    path: /
+    exposure: external
