@@ -9,8 +9,8 @@ spec:
   runtime: nodejs
   source:
     git:
-      url: https://github.com/sicsdev/scholarAthLead-backend
-      branch: master
+      url: https://github.com/your-repo/your-nodejs-project.git
+      branch: main
   build:
     command: npm install
     outputDir: dist
@@ -30,3 +30,9 @@ spec:
       memory: "256Mi"
       cpu: "250m"
   replicas: 2
+  endpoints:
+    - name: my-nodejs-endpoint
+      protocol: HTTP
+      port: 3000
+      path: /
+      exposure: external
