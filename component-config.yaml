@@ -1,0 +1,32 @@
+apiVersion: choreo.io/v1
+kind: Component
+metadata:
+  name: my-nodejs-component
+  version: 1.0.0
+  description: A simple Node.js component
+spec:
+  type: service
+  runtime: nodejs
+  source:
+    git:
+      url: https://github.com/sicsdev/scholarAthLead-backend
+      branch: master
+  build:
+    command: npm install
+    outputDir: dist
+  deploy:
+    command: npm start
+  env:
+    - name: NODE_ENV
+      value: production
+  ports:
+    - port: 3000
+      targetPort: 3000
+  resources:
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+  replicas: 2
