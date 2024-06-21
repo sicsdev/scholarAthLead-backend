@@ -1,38 +1,51 @@
-apiVersion: choreo.io/v1
-kind: Component
-metadata:
-  name: my-nodejs-component
+component:
+  name: scholarathlead-backend
+  type: nodejs
   version: 1.0.0
-  description: A simple Node.js component
-spec:
-  type: service
-  runtime: nodejs
-  source:
-    git:
-      url: https://github.com/your-repo/your-nodejs-project.git
-      branch: main
-  build:
-    command: npm install
-    outputDir: dist
-  deploy:
-    command: npm start
-  env:
-    - name: NODE_ENV
-      value: production
-  ports:
-    - port: 3000
-      targetPort: 3000
-  resources:
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
-    requests:
-      memory: "256Mi"
-      cpu: "250m"
-  replicas: 2
-  endpoints:
-    - name: my-nodejs-endpoint
-      protocol: HTTP
-      port: 3000
-      path: /
-      exposure: external
+
+source:
+  type: git
+  repository: https://github.com/sicsdev/scholarAthLead-backend.git
+  branch: master
+
+runtime:
+  type: nodejs
+  version: 14
+
+build:
+  commands:
+    - npm install
+
+run:
+  commands:
+    - npm start
+
+expose:
+  - name: user-service
+    port: 3001
+    type: REST
+    context: /api/user
+  - name: admin-service
+    port: 3001
+    type: REST
+    context: /api/admin
+
+environment:
+  variables:
+    NODE_ENV: production
+    PORT: 3001
+    DB_HOST: localhost
+    DB_PORT: 3306
+    DB_USER: root
+    DB_PASS: ''
+    DB_NAME: test
+
+dependencies:
+  - name: mysql
+    type: service
+    properties:
+      host: ${DB_HOST}
+      port: ${DB_PORT}
+      username: ${DB_USER}
+      password: ${DB_PASS}
+      database: ${DB_NAME}

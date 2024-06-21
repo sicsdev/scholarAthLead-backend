@@ -1,0 +1,65 @@
+openapi: 3.0.0
+info:
+  title: Admin Service API
+  description: An API to handle admin-related operations.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3001/api/admin
+    description: Local server
+
+paths:
+  /register:
+    post:
+      summary: Register a new admin
+      description: This endpoint allows for the registration of a new admin.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Admin registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Admin registered successfully"
+        '400':
+          description: Invalid input
+
+  /login:
+    post:
+      summary: Admin login
+      description: This endpoint allows an admin to log in.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized

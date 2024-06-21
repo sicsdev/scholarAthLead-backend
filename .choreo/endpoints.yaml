@@ -1,12 +1,15 @@
+version: 0.1
+
 endpoints:
-  - name: my-nodejs-app
-    path: /
-    http_methods:
-      - GET
-      - POST
-    scripts:
-      pre_script: npm install  # Example of a script to run before starting the server
-      start_script: npm start  # Command to start your Node.js application
-    buildpacks:
-      - type: nodejs
-        version: 18.17  
+  - name: User Service
+    port: 3001
+    type: REST
+    networkVisibility: Project
+    context: /api/user
+    schemaFilePath: user_openapi.yaml
+  - name: Admin Service
+    port: 3001
+    type: REST
+    networkVisibility: Project
+    context: /api/admin
+    schemaFilePath: admin_openapi.yaml
