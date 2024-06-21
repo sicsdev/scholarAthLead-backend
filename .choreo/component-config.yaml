@@ -10,7 +10,7 @@ source:
 
 runtime:
   type: nodejs
-  version: 14
+  version: 18
 
 build:
   commands:
@@ -18,7 +18,7 @@ build:
 
 run:
   commands:
-    - npm start
+    - npm dev 
 
 expose:
   - name: user-service
