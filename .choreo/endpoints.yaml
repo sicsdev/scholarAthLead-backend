@@ -1,6 +1,6 @@
 endpoints:
   - name: my-nodejs-app
-    path: /api
+    path: /
     http_methods:
       - GET
       - POST
