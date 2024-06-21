@@ -18,24 +18,24 @@ exports.submitForm = (req, res) => {
         email,
         package,
         payment_status,
-        application_outcome = '' // Default value for application outcome
+        application_outcome = '' 
     } = req.body;
 
-    // Validate required fields (except password)
     if (!parent_name_prefix || !parent_name || !student_name_prefix || !student_name || !birth_date || !age ||
         !school_name || !climbing_experience_months || !climbing_experience_years || !email || !package || !payment_status) {
         return res.status(400).json({ error: 'All fields except password are required' });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    // Check for duplicate email
-    const checkDuplicateEmailSql = 'SELECT * FROM userSchema WHERE email = ?';
+    const checkDuplicateEmailSql = 'SELECT * FROM users WHERE email = ?';
+    console.log("results ::", checkDuplicateEmailSql,email)
     db.query(checkDuplicateEmailSql, [email], (err, results) => {
+
+        console.log("errr::", err)
         if (err) {
             return res.status(500).json({ error: 'Error checking for duplicate email' });
         }
@@ -44,9 +44,8 @@ exports.submitForm = (req, res) => {
             return res.status(400).json({ error: 'Email already exists' });
         }
 
-        // If no duplicate email, proceed with inserting the form data
         const sql = `
-            INSERT INTO userSchema (
+            INSERT INTO users (
                 parent_name_prefix,
                 parent_name,
                 student_name_prefix,
@@ -127,7 +126,7 @@ exports.submitForm = (req, res) => {
 };
 
 exports.getForms = (req, res) => {
-    const sql = 'SELECT * FROM userSchema';
+    const sql = 'SELECT * FROM users';
     db.query(sql, (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Error fetching form data' });
@@ -145,7 +144,7 @@ exports.updateForm = (req, res) => {
         return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    const checkEmailSql = 'SELECT * FROM userSchema WHERE email = ?';
+    const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
     db.query(checkEmailSql, [email], (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Error checking email' });
@@ -155,7 +154,7 @@ exports.updateForm = (req, res) => {
             return res.status(404).json({ error: 'No record found with this email' });
         }
 
-        let updateSql = 'UPDATE userSchema SET ';
+        let updateSql = 'UPDATE users SET ';
         const updateValues = [];
         Object.keys(fieldsToUpdate).forEach((field, index) => {
             updateSql += `${field} = ?`;

@@ -1,90 +1,95 @@
 const stripe = require("../config/stripeConfig");
-const bookingModel = require("../models/bookingModel");
+const bookingModel = require("../models/bookingModel"); // Make sure to import the booking model
 
 const createCustomer = async (req, res) => {
   try {
+    const { name, email, token, address } = req.body;
+
+    // Create a new customer
     const customer = await stripe.customers.create({
-      name: req.body.name,
-      email: req.body.email,
+      name,
+      email,
+      address,
     });
 
-    res.status(200).send(customer);
-  } catch (error) {
-    res.status(400).send({ success: false, msg: error.message });
-  }
-};
-
-const addNewCard = async (req, res) => {
-  try {
-    const {
-      customer_id,
-      card_Name,
-      card_ExpYear,
-      card_ExpMonth,
-      card_Number,
-      card_CVC,
-    } = req.body;
-
-    const card_token = await stripe.tokens.create({
-      card: {
-        name: card_Name,
-        number: card_Number,
-        exp_year: card_ExpYear,
-        exp_month: card_ExpMonth,
-        cvc: card_CVC,
+    // Attach payment method to the customer
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: 'card',
+      card: { token },
+      billing_details: {
+        name,
+        email,
+        address,
       },
     });
 
-    const card = await stripe.customers.createSource(customer_id, {
-      source: `${card_token.id}`,
+    await stripe.paymentMethods.attach(paymentMethod.id, {
+      customer: customer.id,
     });
 
-    res.status(200).send({ card: card.id });
+    // Set the default payment method
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: paymentMethod.id,
+      },
+    });
+
+    res.status(200).send({ success: true, customer });
   } catch (error) {
     res.status(400).send({ success: false, msg: error.message });
   }
 };
 
-const createCharges = async (req, res) => {
+const createSubscription = async (req, res) => {
   try {
-    const { customer_id, card_id, packageType } = req.body;
+    const { customerId, priceId, userId, package, amount, status } = req.body;
 
-    let amount;
-    switch (packageType) {
-      case "weekly":
-        amount = 500; // Replace with your actual amount for weekly package
-        break;
-      case "monthly":
-        amount = 2000; // Replace with your actual amount for monthly package
-        break;
-      case "bi-annually":
-        amount = 10000; // Replace with your actual amount for bi-annual package
-        break;
-      case "annually":
-        amount = 20000; // Replace with your actual amount for annual package
-        break;
-      default:
-        return res.status(400).send("Invalid package type");
-    }
-
-    const createCharge = await stripe.charges.create({
-      receipt_email: "tester@gmail.com",
-      amount: amount * 100, // amount*100 to convert to smallest currency unit
-      currency: "INR",
-      source: card_id, // Use source instead of card
-      customer: customer_id,
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      payment_behavior: 'default_incomplete',
+      expand: ['latest_invoice.payment_intent'],
     });
 
-    // Store booking data in the database
-    const bookingData = {
-      userId: req.body.userId,
-      packageType,
-      amount,
-      paymentStatus: "Paid",
-    };
-    await bookingModel.createBooking(bookingData);
+    const { latest_invoice } = subscription;
+    const { payment_intent } = latest_invoice;
 
-    res.status(200).send(createCharge);
+    // Save the booking with subscription and customer ID
+    console.log(
+      "res::::",
+      userId,
+      package,
+      amount,
+      status,
+      subscription.id,
+      customerId
+    )
+    const bookingResult = await bookingModel.createBooking(
+      userId,
+      amount,
+      status,
+      subscription.id,
+      customerId
+    );
+    console.log("bookingResult", bookingResult)
+
+    res.status(200).send({ success: true, subscription, payment_intent, booking: bookingResult });
+  } catch (error) {
+    res.status(400).send({ success: false, msg: error.message });
+  }
+};
+
+const cancelSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.body;
+    const canceledSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      {
+        cancel_at_period_end: true,
+      }
+    );
+
+    res.status(200).send({ success: true, canceledSubscription });
   } catch (error) {
     res.status(400).send({ success: false, msg: error.message });
   }
@@ -92,6 +97,6 @@ const createCharges = async (req, res) => {
 
 module.exports = {
   createCustomer,
-  addNewCard,
-  createCharges,
+  createSubscription,
+  cancelSubscription
 };

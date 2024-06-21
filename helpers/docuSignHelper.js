@@ -56,10 +56,11 @@ async function checkToken(request) {
   }
 }
 
-function makeRecipientViewRequest(name, email, signatureId) {
+function makeRecipientViewRequest(name, email, signatureId, package, user_id) {
     let viewRequest = new docusign.RecipientViewRequest();
-    console.log("viewRequest", new docusign.RecipientViewRequest());
-    viewRequest.returnUrl = `http://localhost:3000/success?email=${email}&signatureId=${signatureId}`;
+
+    console.log("packagepackage", package);
+    viewRequest.returnUrl = `http://localhost:3000/success?email=${email}&name=${name}&package=${package}&user_id=${user_id}&signatureId=${signatureId}`;
     viewRequest.authenticationMethod = "none";
   
     viewRequest.email = email;

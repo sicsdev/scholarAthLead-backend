@@ -13,13 +13,10 @@ const {
 } = require("./helpers/docuSignHelper");
 
 require("dotenv").config();
-const docusign = require("docusign-esign");
 const app = express();
-const path = require("path");
 
 const session = require("express-session");
 const port = 3001;
-const fs = require("fs");
 app.use(cors());
 
 app.use(bodyParser.json());
@@ -33,8 +30,11 @@ app.use(
   })
 );
 
-app.put("/update-form/:application_outcome", (request, res) => {
+app.put("/api/update-form/:application_outcome", (request, res) => {
    const email = request.body.email;
+   const package = request.body.packages;
+   const user_id = request.body.user_id;
+
    const fieldsToUpdate = request.params;
  
    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,7 +42,7 @@ app.put("/update-form/:application_outcome", (request, res) => {
      return res.status(400).json({ error: "Invalid email format" });
    }
  
-   const checkEmailSql = "SELECT * FROM userSchema WHERE email = ?";
+   const checkEmailSql = "SELECT * FROM users WHERE email = ?";
    db.query(checkEmailSql, [email], (err, results) => {
      if (err) {
        return res.status(500).json({ error: "Error checking email" });
@@ -52,7 +52,7 @@ app.put("/update-form/:application_outcome", (request, res) => {
        return res.status(404).json({ error: "No record found with this email" });
      }
  
-     let updateSql = "UPDATE userSchema SET ";
+     let updateSql = "UPDATE users SET ";
      const updateValues = [];
      Object.keys(fieldsToUpdate).forEach((field, index) => {
        updateSql += `${field} = ?`;
@@ -76,21 +76,24 @@ app.put("/update-form/:application_outcome", (request, res) => {
        let envelope = makeEnvelope(
          request.body.name,
          request.body.email,
-         request.body.parents
+         request.body.packages,
+         request.body.user_id
+
        );
  
        let results = await envelopesApi.createEnvelope(
          process.env.DOCUSIGN_ACCOUNT_ID,
          { envelopeDefinition: envelope }
        );
-       console.log("used", results)
        // Create the recipient view, the Signing Ceremony
        let viewRequest = makeRecipientViewRequest(
          request.body.name,
          request.body.email,
-         results.envelopeId // Pass the envelopeId as the signatureId
+         results.envelopeId ,// Pass the envelopeId as the signatureId,
+         request.body.packages,
+         request.body.user_id
+
        );
-       console.log("boss ::", results)
  
        results = await envelopesApi.createRecipientView(
          process.env.DOCUSIGN_ACCOUNT_ID,
@@ -100,7 +103,7 @@ app.put("/update-form/:application_outcome", (request, res) => {
  
        console.log("boss ::", results)
  
-       if (fieldsToUpdate.application_outcome) {
+       if (fieldsToUpdate.application_outcome == "yes") {
           const userMailOptions = {
              from: process.env.EMAIL_USER,
              to: email,
@@ -132,37 +135,7 @@ app.put("/update-form/:application_outcome", (request, res) => {
  });
 
 
- const packagePrices = {
-  weekly: 10000,       // in cents
-  monthly: 30000,      // in cents
-  biannually: 162000,  // in cents
-  annually: 300000     // in cents
-};
 
-// Payment Intent Route
-app.post('/create-payment-intent', async (req, res) => {
-  const { packageType } = req.body;
-
-  if (!packagePrices[packageType]) {
-      return res.status(400).send('Invalid package type');
-  }
-
-  const amount = packagePrices[packageType];
-
-  try {
-      const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount,
-          currency: 'usd',
-          payment_method_types: ['card'],
-      });
-
-      res.json({
-          clientSecret: paymentIntent.client_secret,
-      });
-  } catch (error) {
-      res.status(500).send(error.message);
-  }
-});
 //  https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature%20impersonation&client_id=17145da5-a2ee-4c8a-aa7b-ffaf8243c321&redirect_uri=http://localhost:3001/
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
