@@ -4,6 +4,8 @@ const cors = require("cors");
 const db = require("./config/db");
 const transporter = require("./config/email");
 const userRoutes = require("./routes/userRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes")
+
 const adminRoutes = require("./routes/adminRoutes");
 const {
   getEnvelopesApi,
@@ -138,7 +140,8 @@ app.put("/api/update-form/:application_outcome", (request, res) => {
 
 //  https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature%20impersonation&client_id=17145da5-a2ee-4c8a-aa7b-ffaf8243c321&redirect_uri=http://localhost:3001/
 app.use("/api/user", userRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminRoutes, availabilityRoutes);
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

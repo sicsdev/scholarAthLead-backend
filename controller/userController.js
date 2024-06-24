@@ -17,13 +17,12 @@ exports.submitForm = (req, res) => {
         message,
         email,
         package,
-        payment_status,
-        application_outcome = '' 
+        payment_status = "UnPaid",
+        application_outcome = ''
     } = req.body;
 
-    if (!parent_name_prefix || !parent_name || !student_name_prefix || !student_name || !birth_date || !age ||
-        !school_name || !climbing_experience_months || !climbing_experience_years || !email || !package || !payment_status) {
-        return res.status(400).json({ error: 'All fields except password are required' });
+    if (!parent_name || !student_name || !email || !package) {
+        return res.status(400).json({ error: 'Parent name, student name, email, and package are required' });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,10 +31,9 @@ exports.submitForm = (req, res) => {
     }
 
     const checkDuplicateEmailSql = 'SELECT * FROM users WHERE email = ?';
-    console.log("results ::", checkDuplicateEmailSql,email)
+    console.log("results ::", checkDuplicateEmailSql, email);
     db.query(checkDuplicateEmailSql, [email], (err, results) => {
-
-        console.log("errr::", err)
+        console.log("errr::", err);
         if (err) {
             return res.status(500).json({ error: 'Error checking for duplicate email' });
         }
