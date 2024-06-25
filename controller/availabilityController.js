@@ -7,18 +7,17 @@ exports.setAvailability = (req, res) => {
         return res.status(400).json({ error: 'Availability should be an array and is required' });
     }
 
-    const sql = 'INSERT INTO Availability (date, start_time, end_time) VALUES ?';
+    const sql = 'INSERT INTO Availability (start_end_time) VALUES ?';
 
-    const values = availability.map(slot => [slot.date, slot.start_time, slot.end_time]);
+    const values = availability.map(item => [JSON.stringify({ date: item.date, slots: item.times })]);
 
     db.query(sql, [values], (err, result) => {
         if (err) {
-            return res.status(500).json({ error: 'Error setting availability' });
+            return res.status(500).json({ error: err.message });
         }
         res.status(201).json({ message: 'Availability set successfully' });
     });
-};
-
+};  
 
 exports.getAvailability = (req, res) => {
     const sql = 'SELECT * FROM Availability';

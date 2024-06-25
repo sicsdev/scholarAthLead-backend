@@ -105,7 +105,7 @@ app.put("/api/update-form/:application_outcome", (request, res) => {
  
        console.log("boss ::", results)
  
-       if (fieldsToUpdate.application_outcome == "yes") {
+       if (fieldsToUpdate.application_outcome == "Yes") {
           const userMailOptions = {
              from: process.env.EMAIL_USER,
              to: email,

@@ -42,7 +42,7 @@ const createCustomer = async (req, res) => {
 
 const createSubscription = async (req, res) => {
   try {
-    const { customerId, priceId, userId, package, amount, status } = req.body;
+    const { customerId, priceId, userId,  amount, status,schedule_date, schedule_time } = req.body;
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
@@ -55,21 +55,15 @@ const createSubscription = async (req, res) => {
     const { payment_intent } = latest_invoice;
 
     // Save the booking with subscription and customer ID
-    console.log(
-      "res::::",
-      userId,
-      package,
-      amount,
-      status,
-      subscription.id,
-      customerId
-    )
+
     const bookingResult = await bookingModel.createBooking(
       userId,
       amount,
       status,
       subscription.id,
-      customerId
+      customerId,
+      schedule_time,
+      schedule_date
     );
     console.log("bookingResult", bookingResult)
 
