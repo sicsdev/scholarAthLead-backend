@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const transporter = require('../config/email');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
-
 
 exports.submitForm = (req, res) => {
     const {
@@ -184,8 +184,6 @@ exports.updateForm = (req, res) => {
                     }
                     console.log('Email sent to user: ' + info.response);
                 });
-
-              
             }
 
             res.status(200).json({ message: 'Form data updated successfully' });
@@ -193,4 +191,52 @@ exports.updateForm = (req, res) => {
     });
 };
 
+// Set Password Function
+exports.setPassword = async (req, res) => {
+    const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
+    db.query(checkEmailSql, [email], async (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error checking email' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'No record found with this email' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const updatePasswordSql = 'UPDATE users SET password = ? WHERE email = ?';
+
+        db.query(updatePasswordSql, [hashedPassword, email], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Error updating password' });
+            }
+
+            const userMailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Password Set Confirmation',
+                text: `Dear ${results[0].parent_name}, your password has been successfully set.`
+            };
+
+            transporter.sendMail(userMailOptions, (error, info) => {
+                if (error) {
+                    return res.status(500).json({ error: 'Error sending email to user' });
+                }
+                console.log('Email sent to user: ' + info.response);
+            });
+
+            res.status(200).json({ message: 'Password set successfully' });
+        });
+    });
+};

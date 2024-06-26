@@ -14,6 +14,7 @@ router.post("/submit-form", userController.submitForm);
 router.post("/create-customer", stripeController.createCustomer);
 router.post("/create-payment", stripeController.createSubscription);
 router.post("/cancel-subscription", stripeController.cancelSubscription);
+router.post('/set-password', userController.setPassword); // New route for setting password
 
 
 
