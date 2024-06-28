@@ -71,9 +71,34 @@ function makeRecipientViewRequest(name, email, signatureId, package, user_id) {
   }
   
 
+  async function getDocument(request, envelopeId, documentId) {
+    await checkToken(request); // Ensure the token is valid
+    const envelopesApi = getEnvelopesApi(request);
+  
+    try {
+      const documentBuffer = await envelopesApi.getDocument(process.env.DOCUSIGN_ACCOUNT_ID, envelopeId, documentId, null, { encoding: null });
+      return Buffer.from(documentBuffer, 'binary');
+    } catch (error) {
+      throw new Error('Error fetching document: ' + error.message);
+    }
+  }
+  async function listDocuments(request, envelopeId) {
+    await checkToken(request); // Ensure the token is valid
+    const envelopesApi = getEnvelopesApi(request);
+  
+    try {
+      const documents = await envelopesApi.listDocuments(process.env.DOCUSIGN_ACCOUNT_ID, envelopeId);
+      return documents.envelopeDocuments;
+    } catch (error) {
+      throw new Error('Error listing documents: ' + error.message);
+    }
+  }
+  
 module.exports = {
   getEnvelopesApi,
+  getDocument,
   makeEnvelope,
+  listDocuments,
   checkToken,
   makeRecipientViewRequest
 };

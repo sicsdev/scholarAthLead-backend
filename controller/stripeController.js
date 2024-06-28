@@ -1,5 +1,6 @@
 const stripe = require("../config/stripeConfig");
 const bookingModel = require("../models/bookingModel"); // Make sure to import the booking model
+const userModel = require("../models/userModel"); // Import the user model
 
 const createCustomer = async (req, res) => {
   try {
@@ -42,7 +43,7 @@ const createCustomer = async (req, res) => {
 
 const createSubscription = async (req, res) => {
   try {
-    const { customerId, priceId, userId,  amount, status,schedule_date, schedule_time } = req.body;
+    const { customerId, priceId, userId, amount, status, schedule_date, schedule_time } = req.body;
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
@@ -55,7 +56,6 @@ const createSubscription = async (req, res) => {
     const { payment_intent } = latest_invoice;
 
     // Save the booking with subscription and customer ID
-
     const bookingResult = await bookingModel.createBooking(
       userId,
       amount,
@@ -65,7 +65,9 @@ const createSubscription = async (req, res) => {
       schedule_time,
       schedule_date
     );
-    console.log("bookingResult", bookingResult)
+    console.log("bookingResult", bookingResult);
+
+    await userModel.updatePaymentStatus(userId, "Paid");
 
     res.status(200).send({ success: true, subscription, payment_intent, booking: bookingResult });
   } catch (error) {

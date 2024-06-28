@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     package VARCHAR(255) NOT NULL,
     payment_status ENUM('Paid', 'Unpaid') NOT NULL,
-    application_outcome ENUM('Yes', 'Waiting List', 'No availability','Awaiting Approval') DEFAULT 'Awaiting Approval' NOT NULL,
+    application_outcome ENUM('Approve', 'Waiting List', 'No availability') NOT NULL,
     docusign_view_link VARCHAR(255),
+    waiver_form_sent  ENUM('Yes', 'No')   DEFAULT 'No' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
