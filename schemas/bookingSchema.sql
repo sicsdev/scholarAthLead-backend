@@ -5,9 +5,7 @@ CREATE TABLE IF NOT EXISTS booking (
     status ENUM('Active', 'Cancelled') DEFAULT 'Active' NOT NULL,
     subscription_id VARCHAR(255),
     customer_id VARCHAR(255),
-    card_type VARCHAR(50) NOT NULL,
-    schedule_time TIME NOT NULL,
-    schedule_date DATE NOT NULL,
+    user_data JSON NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -1,5 +1,4 @@
 const db = require("../config/bookingdb"); // Assuming you have a database configuration file
-
 require('dotenv').config();
 const transporter = require("../config/email.js"); 
 
@@ -46,45 +45,68 @@ const sendBookingEmail = async (userEmail, userName, amount, scheduleTime, sched
   }
 };
 
-// Example usage after booking creation
 const createBooking = async (
   userId,
   amount,
   paymentStatus,
   subscriptionId,
   customerId,
-  scheduleTime,
-  scheduleDate,
-  userEmail,
-  userName
+  userData
 ) => {
   // Check if booking with the given user ID exists
   const [rows] = await db.execute(
-    "SELECT id FROM booking WHERE user_id = ?",
+    "SELECT id, user_data FROM booking WHERE user_id = ?",
     [userId]
   );
 
   let result;
+  let updatedUserData;
   if (rows.length > 0) {
     // If booking exists, update it
+    let existingUserData = JSON.parse(rows[0].user_data);
+    if (!Array.isArray(existingUserData)) {
+      existingUserData = [];
+    }
+    existingUserData.push(userData);
+    updatedUserData = existingUserData;
     [result] = await db.execute(
-      "UPDATE booking SET amount = ?, status = ?, subscription_id = ?, customer_id = ?, schedule_time = ?, schedule_date = ? WHERE user_id = ?",
-      [amount, paymentStatus, subscriptionId, customerId, scheduleTime, scheduleDate, userId]
+      "UPDATE booking SET amount = ?, status = ?, subscription_id = ?, customer_id = ?, user_data = ? WHERE user_id = ?",
+      [amount, paymentStatus, subscriptionId, customerId, JSON.stringify(updatedUserData), userId]
     );
   } else {
     // If booking does not exist, insert a new one
+    updatedUserData = [userData];
     [result] = await db.execute(
-      "INSERT INTO booking (id, user_id, amount, status, subscription_id, customer_id, schedule_time, schedule_date) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
-      [userId, amount, paymentStatus, subscriptionId, customerId, scheduleTime, scheduleDate]
+      "INSERT INTO booking (id, user_id, amount, status, subscription_id, customer_id, user_data) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
+      [userId, amount, paymentStatus, subscriptionId, customerId, JSON.stringify(updatedUserData)]
     );
   }
 
   // Send booking confirmation email
-  await sendBookingEmail(userEmail, userName, amount, scheduleTime, scheduleDate);
+  await sendBookingEmail(userData.email, userData.name, amount, userData.scheduleTime, userData.scheduleDate);
 
   return result;
 };
 
+const getBooking = async (userId) => {
+  try {
+    const [rows] = await db.execute(
+      "SELECT id, user_id, amount, status, subscription_id, customer_id, user_data, created_at FROM booking WHERE user_id = ?",
+      [userId]
+    );
+
+    if (rows.length > 0) {
+      return rows[0]; // Return the first booking found for the user
+    } else {
+      return null; // No booking found for the user
+    }
+  } catch (error) {
+    console.error('Error fetching booking:', error);
+    throw error; // Rethrow the error to be handled by the caller
+  }
+};
+
 module.exports = {
   createBooking,
+  getBooking
 };

@@ -5,6 +5,8 @@ const db = require("./config/db");
 const transporter = require("./config/email");
 const userRoutes = require("./routes/userRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
+
 const adminRoutes = require("./routes/adminRoutes");
 const {
   getEnvelopesApi,
@@ -53,17 +55,15 @@ app.get("/api/get-document", async (req, res) => {
   if (!envelopeId || !documentId) {
     return res.status(400).json({ error: "Missing envelopeId or documentId" });
   }
-
   try {
     const documentBuffer = await getDocument(req, envelopeId, documentId);
-    res.setHeader('Content-Disposition', 'attachment; filename=document.pdf');
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader("Content-Disposition", "attachment; filename=document.pdf");
+    res.setHeader("Content-Type", "application/pdf");
     res.send(documentBuffer);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 
 
@@ -180,7 +180,7 @@ app.put("/api/update-form/:application_outcome", (request, res) => {
 
 //  https://account-d.docusign.com/oauth/auth?response_type=code&scope=signature%20impersonation&client_id=17145da5-a2ee-4c8a-aa7b-ffaf8243c321&redirect_uri=http://localhost:3001/
 app.use("/api/user", userRoutes);
-app.use("/api/admin", adminRoutes, availabilityRoutes);
+app.use("/api/admin", adminRoutes, availabilityRoutes,bookingRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

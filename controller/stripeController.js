@@ -15,7 +15,7 @@ const createCustomer = async (req, res) => {
 
     // Attach payment method to the customer
     const paymentMethod = await stripe.paymentMethods.create({
-      type: 'card',
+      type: "card",
       card: { token },
       billing_details: {
         name,
@@ -43,14 +43,16 @@ const createCustomer = async (req, res) => {
 
 const createSubscription = async (req, res) => {
   try {
-    const { customerId, priceId, userId, amount, status, schedule_date, schedule_time } = req.body;
+    const { customerId, priceId, userId, amount, status } = req.body;
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
-      payment_behavior: 'default_incomplete',
-      expand: ['latest_invoice.payment_intent'],
+      payment_behavior: "default_incomplete",
+      expand: ["latest_invoice.payment_intent"],
     });
+
+    let userData = subscription
 
     const { latest_invoice } = subscription;
     const { payment_intent } = latest_invoice;
@@ -62,14 +64,19 @@ const createSubscription = async (req, res) => {
       status,
       subscription.id,
       customerId,
-      schedule_time,
-      schedule_date
+      userData // Adding userData to the booking
     );
-    console.log("bookingResult", bookingResult);
 
     await userModel.updatePaymentStatus(userId, "Paid");
 
-    res.status(200).send({ success: true, subscription, payment_intent, booking: bookingResult });
+    res
+      .status(200)
+      .send({
+        success: true,
+        subscription,
+        payment_intent,
+        booking: bookingResult,
+      });
   } catch (error) {
     res.status(400).send({ success: false, msg: error.message });
   }
@@ -94,5 +101,5 @@ const cancelSubscription = async (req, res) => {
 module.exports = {
   createCustomer,
   createSubscription,
-  cancelSubscription
+  cancelSubscription,
 };

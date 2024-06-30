@@ -1,6 +1,6 @@
-const docusign = require('docusign-esign');
-const fs = require('fs');
-const path = require('path');
+const docusign = require("docusign-esign");
+const fs = require("fs");
+const path = require("path");
 
 function getEnvelopesApi(request) {
   let dsApiClient = new docusign.ApiClient();
@@ -40,6 +40,7 @@ function makeEnvelope(name, email, company) {
 
 async function checkToken(request) {
   if (request.session.access_token && Date.now() < request.session.expires_at) {
+    // Token is valid, do nothing
   } else {
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(process.env.DOCUSIGN_API_BASE_PATH);
@@ -50,6 +51,7 @@ async function checkToken(request) {
       fs.readFileSync(path.join(__dirname, "../private.key")),
       3600
     );
+    console.log("results", results);
     request.session.access_token = results.body.access_token;
     request.session.expires_at =
       Date.now() + (results.body.expires_in - 60) * 1000;
@@ -57,48 +59,62 @@ async function checkToken(request) {
 }
 
 function makeRecipientViewRequest(name, email, signatureId, package, user_id) {
-    let viewRequest = new docusign.RecipientViewRequest();
+  let viewRequest = new docusign.RecipientViewRequest();
 
-    console.log("packagepackage", package);
-    viewRequest.returnUrl = `http://localhost:3000/success?email=${email}&name=${name}&package=${package}&user_id=${user_id}&signatureId=${signatureId}`;
-    viewRequest.authenticationMethod = "none";
-  
-    viewRequest.email = email;
-    viewRequest.userName = name;
-    viewRequest.clientUserId = process.env.DOCUSIGN_INTEGRATOR_KEY;
-  
-    return viewRequest;
-  }
-  
+  console.log("packagepackage", package);
+  viewRequest.returnUrl = `http://localhost:3000/success?email=${email}&name=${name}&package=${package}&user_id=${user_id}&signatureId=${signatureId}`;
+  viewRequest.authenticationMethod = "none";
 
-  async function getDocument(request, envelopeId, documentId) {
-    await checkToken(request); // Ensure the token is valid
-    const envelopesApi = getEnvelopesApi(request);
-  
-    try {
-      const documentBuffer = await envelopesApi.getDocument(process.env.DOCUSIGN_ACCOUNT_ID, envelopeId, documentId, null, { encoding: null });
-      return Buffer.from(documentBuffer, 'binary');
-    } catch (error) {
-      throw new Error('Error fetching document: ' + error.message);
-    }
+  viewRequest.email = email;
+  viewRequest.userName = name;
+  viewRequest.clientUserId = process.env.DOCUSIGN_INTEGRATOR_KEY;
+
+  return viewRequest;
+}
+async function getDocument(request, envelopeId, documentId) {
+  await checkToken(request); // Ensure the token is valid
+  const envelopesApi = getEnvelopesApi(request);
+
+  return new Promise((resolve, reject) => {
+    envelopesApi.getSignatureImage(
+      process.env.DOCUSIGN_ACCOUNT_ID,
+      envelopeId,
+      documentId,
+      null,
+      (err, documentBuffer) => {
+        if (err) {
+          reject(new Error("Error fetching document: " + err.message));
+        } else {
+          resolve(Buffer.from(documentBuffer, "binary"));
+        }
+      }
+    );
+  });
+}
+async function listDocuments(request, envelopeId) {
+  await checkToken(request); // Ensure the token is valid
+  const envelopesApi = getEnvelopesApi(request);
+
+  try {
+    const documents = await envelopesApi.listDocuments(
+      process.env.DOCUSIGN_ACCOUNT_ID,
+      envelopeId
+    );
+    return documents.envelopeDocuments;
+  } catch (error) {
+    throw new Error("Error listing documents: " + error.message);
   }
-  async function listDocuments(request, envelopeId) {
-    await checkToken(request); // Ensure the token is valid
-    const envelopesApi = getEnvelopesApi(request);
-  
-    try {
-      const documents = await envelopesApi.listDocuments(process.env.DOCUSIGN_ACCOUNT_ID, envelopeId);
-      return documents.envelopeDocuments;
-    } catch (error) {
-      throw new Error('Error listing documents: ' + error.message);
-    }
-  }
-  
+}
+
 module.exports = {
   getEnvelopesApi,
   getDocument,
   makeEnvelope,
   listDocuments,
   checkToken,
-  makeRecipientViewRequest
+  makeRecipientViewRequest,
 };
+
+
+
+
