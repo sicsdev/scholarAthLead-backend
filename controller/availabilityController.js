@@ -20,13 +20,14 @@ exports.setAvailability = (req, res) => {
 };  
 
 exports.getAvailability = (req, res) => {
-    const sql = 'SELECT * FROM Availability';
+    // Assuming there is a column named 'id' which is auto-incrementing
+    const sql = 'SELECT * FROM Availability ORDER BY id DESC LIMIT 1';
 
     db.query(sql, (err, results) => {
         if (err) {
             console.error('Error retrieving availability:', err);
             return res.status(500).json({ error: 'Error retrieving availability', details: err.message });
         }
-        res.json(results);
+        res.json(results[0]); // Return the first (and only) result
     });
 };

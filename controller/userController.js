@@ -4,139 +4,158 @@ const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 exports.submitForm = (req, res) => {
-    const {
+  const {
       parent_name_prefix,
       parent_name,
+      parent_phone,
       student_name_prefix,
       student_name,
+      student_phone,
       birth_date,
       age,
       school_name,
       linkedin_profile,
       climbing_experience_months,
       climbing_experience_years,
-      message,
+      climbing_goal,
+      leadership_goal,
       email,
+      password,
       package,
-      payment_status = "UnPaid",
+      payment_status = "Unpaid",
       application_outcome = "",
-    } = req.body;
-  
-    if (!parent_name || !student_name || !email || !package) {
+      confirmation_availability = "No",
+      address
+  } = req.body;
+
+  if (!parent_name || !student_name || !email || !package) {
       return res.status(400).json({
-        error: "Parent name, student name, email, and package are required",
+          error: "Parent name, student name, email, and package are required",
       });
-    }
-  
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email format" });
-    }
-  
-    const checkDuplicateEmailSql = "SELECT * FROM users WHERE email = ?";
-    db.query(checkDuplicateEmailSql, [email], (err, results) => {
+  }
+
+  const checkDuplicateEmailSql = "SELECT * FROM users WHERE email = ?";
+  db.query(checkDuplicateEmailSql, [email], (err, results) => {
       if (err) {
-        return res.status(500).json({ error: "Error checking for duplicate email" });
+          return res.status(500).json({ error: "Error checking for duplicate email" });
       }
-  
+
       if (results.length > 0) {
-        return res.status(400).json({ error: "Email already exists" });
+          return res.status(400).json({ error: "Email already exists" });
       }
-  
-      // Convert birth_date to YYYY/M/D format
+
+      // Convert birth_date to YYYY/MM/DD format
       let formattedBirthDate = null;
       if (birth_date) {
-        const date = new Date(birth_date);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1; // Months are zero-based in JavaScript
-        const day = date.getDate();
-        formattedBirthDate = `${year}/${month}/${day}`;
+          const date = new Date(birth_date);
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1; // Months are zero-based in JavaScript
+          const day = date.getDate();
+          formattedBirthDate = `${year}/${month}/${day}`;
       }
-  
+
       const sql = `
-        INSERT INTO users (
-          parent_name_prefix,
-          parent_name,
-          student_name_prefix,
-          student_name,
-          birth_date,
-          age,
-          school_name,
-          linkedin_profile,
-          climbing_experience_months,
-          climbing_experience_years,
-          message,
-          email,
-          package,
-          payment_status,
-          application_outcome
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO users (
+              parent_name_prefix,
+              parent_name,
+              parent_phone,
+              student_name_prefix,
+              student_name,
+              student_phone,
+              birth_date,
+              age,
+              school_name,
+              linkedin_profile,
+              climbing_experience_months,
+              climbing_experience_years,
+              climbing_goal,
+              leadership_goal,
+              email,
+              password,
+              package,
+              payment_status,
+              application_outcome,
+              confirmation_availability,
+              address
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-  
+
       db.query(
-        sql,
-        [
-          parent_name_prefix,
-          parent_name,
-          student_name_prefix,
-          student_name,
-          formattedBirthDate,
-          age,
-          school_name,
-          linkedin_profile,
-          climbing_experience_months,
-          climbing_experience_years,
-          message,
-          email,
-          package,
-          payment_status,
-          application_outcome,
-        ],
-        (err, result) => {
-          if (err) {
-            return res.status(500).json({ error: "Error saving form data" });
+          sql,
+          [
+              parent_name_prefix,
+              parent_name,
+              parent_phone,
+              student_name_prefix,
+              student_name,
+              student_phone,
+              formattedBirthDate,
+              age,
+              school_name,
+              linkedin_profile,
+              climbing_experience_months,
+              climbing_experience_years,
+              climbing_goal,
+              leadership_goal,
+              email,
+              password,
+              package,
+              payment_status,
+              application_outcome,
+              confirmation_availability,
+              address
+          ],
+          (err, result) => {
+              if (err) {
+                  return res.status(500).json({ error: err });
+              }
+
+              // Send email to admin
+              const adminMailOptions = {
+                  from: process.env.EMAIL_USER,
+                  to: "console.log.vivek@gmail.com",
+                  subject: "New Form Submission",
+                  text: `
+                      A new form has been submitted with the following details:
+                      Student Name: ${student_name}
+                  `,
+              };
+
+              transporter.sendMail(adminMailOptions, (error, info) => {
+                  if (error) {
+                      console.error("Error sending email to admin: ", error);
+                  } else {
+                      console.log("Email sent to admin: " + info.response);
+                  }
+              });
+
+              // Send email to user
+              const userMailOptions = {
+                  from: process.env.EMAIL_USER,
+                  to: email,
+                  subject: "Form Submission Confirmation",
+                  text: `Dear ${parent_name}, your form has been successfully submitted.`,
+              };
+
+              transporter.sendMail(userMailOptions, (error, info) => {
+                  if (error) {
+                      console.error("Error sending email to user: ", error);
+                  } else {
+                      console.log("Email sent to user: " + info.response);
+                  }
+              });
+
+              return res.status(201).json({ message: "Form data saved successfully", data: result });
           }
-  
-          // Send email to admin
-          const adminMailOptions = {
-            from: process.env.EMAIL_USER,
-            to: "console.log.vivek@gmail.com",
-            subject: "New Form Submission",
-            text: `
-              A new form has been submitted with the following details:
-              Student Name: ${student_name}
-            `,
-          };
-  
-          transporter.sendMail(adminMailOptions, (error, info) => {
-            if (error) {
-              console.error("Error sending email to admin: ", error);
-            } else {
-              console.log("Email sent to admin: " + info.response);
-            }
-          });
-  
-          // Send email to user
-          const userMailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Form Submission Confirmation",
-            text: `Dear ${parent_name}, your form has been successfully submitted.`,
-          };
-  
-          transporter.sendMail(userMailOptions, (error, info) => {
-            if (error) {
-              console.error("Error sending email to user: ", error);
-            } else {
-              console.log("Email sent to user: " + info.response);
-            }
-          });
-  
-          return res.status(201).json({ message: "Form data saved successfully" });
-        }
       );
-    });
-  };
+  });
+};
+
 
 exports.getForms = (req, res) => {
   const sql = "SELECT * FROM users";

@@ -69,8 +69,7 @@ app.get("/api/get-document", async (req, res) => {
 
 app.put("/api/update-form/:application_outcome", (request, res) => {
   const email = request.body.email;
-  const package = request.body.packages;
-  const user_id = request.body.user_id;
+  
 
   const fieldsToUpdate = request.params;
 
